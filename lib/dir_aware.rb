@@ -35,7 +35,6 @@ class DirAware
   headers=@db.keys
   f=format 'loghere_dump-%d.md', Time.now.to_i
 
-  text=
   @db
   .each_with_object([]){|pair, arr|
     k, v = pair
@@ -47,7 +46,9 @@ class DirAware
 
  def to_s
   return "" unless @db[key]
-  @db.dup[key].map{|r| [Time.at(r.shift).to_s.blue] + r }.join("\n")
+  @db[key]
+  &.map{|r| [Time.at(r.shift).to_s.blue] + r }
+  &.join("\n")
  end
 end
 
