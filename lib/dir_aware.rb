@@ -7,13 +7,17 @@ opts = {}
 
 class DirAware
  def initialize(f='~/.notes/loghere.json'.to_pathname)
-  @stategy = JSONFile.new(f)
-  @file, @db = Filer.load(@stategy){ Hash.new() }
+  @file, @db = Filer.load_json(f){ Hash.new() }
   File.backup!(f) if File.age(f) > 60*15
  end
 
  def key(other=nil)
-  Dir.pwd
+  Dir.pwd.split('/').last(2).join('/')
+ end
+
+ def reset_keys
+  @db.transform_keys!{|k| k.to_s.split('/').last(2).join('/')}
+  @file.write @db
  end
 
  def push(v)
@@ -38,17 +42,27 @@ class DirAware
   @db
   .each_with_object([]){|pair, arr|
     k, v = pair
-    arr<<format("# %s\n\n%s\n\n", k, v&.map{|r| [Time.at(r.shift).to_s.yellow] + r }.join("\n"))
+    # arr<<format("# %s\n\n%s\n\n", k, v&.map{|r| [Time.at(r.shift).to_s.yellow] + r }.join("\n"))
+    arr<<format("# %s\n\n%s\n\n", k, v&.join("\n"))
   }
   .join("\n")
   .then(&method(:puts))
  end
 
  def to_s
-  return "" unless @db[key]
-  @db[key]
-  &.map{|r| [Time.at(r.shift).to_s.blue] + r }
-  &.join("\n")
+  # return "" unless @db[key]
+  @db.keys
+  .select{|k| [k.start_with?(key), k.start_with?(key.split('/').last)].any? }
+  .map{ |key| show key }
+  .reverse
+  .join("\n\n")
+ end
+
+ def show key
+    @db[key]
+    &.map{|r| r }
+    &.then{|arr| arr.prepend(key.to_s.blue) }
+    &.join("\n")
  end
 end
 

@@ -7,10 +7,16 @@ require 'dir_aware'
 require 'optparse'
 opts = {}
 
+OptionParser.new do |par|
+  par.on('-d')
+end
+.parse!(into: opts)
+
 db=DirAware.new
 
 if opts[:d]
   db.dump
+  db.reset_keys
 else
   db.save{
     File.editor.chomp
